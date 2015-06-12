@@ -1,5 +1,6 @@
 # plex-aniMess
 ![](https://travis-ci.org/mark-ignacio/plex-aniMess.svg?branch=master)
+
 A Plex Media Server scanner for anime that isn't organized at all.
 
 aniMess relies solely on the filename to determine which show, season, and series a file belongs to. This decouples the 
