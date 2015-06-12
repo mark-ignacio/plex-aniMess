@@ -6,10 +6,13 @@ import unittest
 import re
 import os
 
-import VideoFiles
-import Stack
-import Media
-
+try:
+    import VideoFiles
+    import Stack
+    import Media
+except ImportError:
+    # mocks for testing
+    from test import VideoFiles, Stack, Media
 
 
 # see tests for matches
