@@ -11,7 +11,7 @@ try:
     import Stack
     import Media
 except ImportError:
-    # mocks for testing
+    # copied from the appropriate directories for testing
     from test import VideoFiles, Stack, Media
 
 
@@ -137,7 +137,7 @@ class EpisodeTestCase(unittest.TestCase):
             '[hh]_Something_wit_underscores_-_02_[DEADBEEF].mkv',
             '[hh]_Something_wit_underscores_-_02_And_a_title!_[DEADBEEF].mkv',
             '[umai] Put a quote\' and extra spaces here2 - 11  (Transcode 720p H264).mkv',
-            '[One-Raws] Check this special - 40.mkv',
+            '[One-Raws] Check this lazy title - 40.mkv',
             '[Capitalist] Niña y Tanque - 12v2 [DEABBEEF].mkv',
             '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv'
         ]
@@ -151,12 +151,23 @@ class EpisodeTestCase(unittest.TestCase):
                 raise
 
             eps += new_eps
-
-        for ep in eps:
-            print ep
-            if ep.name:
-                print '\tTitle:', ep.name
-
+            
+        expected_attrs = [
+            ('This Has Spaces', 3, 1, None),
+            ('Something wit underscores', 1, 2, None),
+            ('Something wit underscores', 1, 2, 'And a title!'),
+            ('Put a quote\' and extra spaces here2', 1, 11, None),
+            ('Check this lazy title', 1, 40, None),
+            ('Niña y Tanque', 1, 12, None),
+            ('Smoke Erryday', 1, 2, None),
+        ]
+        
+        for ep, expected in zip(eps, expected_attrs):
+            self.assertEqual(ep.show, expected[0])
+            self.assertEqual(str(ep.season), str(expected[1]))
+            self.assertEqual(str(ep.episode), str(expected[2]))
+            self.assertEqual(ep.name, expected[3])
+        
     def test_actually_a_movie(self):
         movie_filenames = [
             "[Capitalist] Normal Guy Monotone B's - The Movie 2nd [BD 1080p AAC] [DEABBEEF].mkv",
