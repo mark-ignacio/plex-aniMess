@@ -2,9 +2,12 @@
 # AniMess Scanner
 
 from urllib2 import urlopen
-import unittest
-import re
+
+import logging
 import os
+import platform
+import re
+import unittest
 
 try:
     import VideoFiles
@@ -41,7 +44,7 @@ RE_EPISODE_THORA = re.compile(r'^(?P<show>.+?)_?'
 
 
 def Scan(path, files, media_list, subdirs):
-    print 'Animess scan'
+    logging.info('Starting Animess scan')
 
     VideoFiles.Scan(path, files, media_list, subdirs)
 
@@ -50,6 +53,13 @@ def Scan(path, files, media_list, subdirs):
         episodes = match_episodes(file_path)
         if episodes is not None:
             media_list.extend(episodes)
+
+            if len(episodes) == 1:
+                logging.info('Episode found for {}: {}', file_path, episodes[0])
+            else:
+                logging.info('Episodes found for {}:'.format(file_path))
+                for ep in episodes:
+                    logging.info('\t{}'.format(ep))
 
     # slap it in
     Stack.Scan(path, files, media_list, subdirs)
@@ -91,7 +101,45 @@ def match_episodes(file_path):
         return episodes
 
 
+# logging and other utilities
+# from https://support.plex.tv/hc/en-us/articles/200250417-Plex-Media-Server-Log-Files
+_log_map = {
+    'linux': [
+        '$PLEX_HOME/Library/Application Support/Plex Media Server/Logs/',  # should work 99% of the time
+        '/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Logs',  # supported Linux distributions
+        '/share/MD0_DATA/.qpkg/PlexMediaServer/Library/Plex Media Server/Logs/',  # QNAP
+        '/c/.plex/Library/Application Support/Plex Media Server/Logs/'  # ReadyNAS
+        '/Volume1/Plex/Library/Application Support/Plex Media Server/Logs/'  # Synology, Asustor
+        '/mnt/HD/HD_a2/plex_conf/Plex Media Server/Logs'  # WD MyCloud
+    ],
+    'freebsd': [
+        '/usr/local/plexdata/Plex Media Server/Logs'  # FreeBSD
+        '${JAIL_ROOT}/var/db/plexdata/Plex Media Server/Logs/'  # FreeNAS
+    ],
+    'darwin': ['$HOME/Library/Application Support/Plex Media Server/Logs'],
+    'win32': [
+        '%LOCALAPPDATA%\\Plex Media Server\\Logs',
+        '%USERPROFILE%\\Local Settings\\Application Data\\Plex Media Server\\Logs'
+    ]
+}
+
+
+def _setup_logging():
+    try:
+        directories = _log_map[platform.system()]
+        for path in directories:
+            if os.path.exists(path):
+                logging.basicConfig(filename=os.path.join(path, 'animess.log'), level=logging.INFO)
+
+    # ignore file logging on unsupported/untested operating systems - mostly pertains to NAS's
+    except KeyError:
+        logging.basicConfig()
+
+
 class EpisodeTestCase(unittest.TestCase):
+    def setUp(self):
+        logging.basicConfig()
+
     # noinspection PyPep8Naming
     def _get_THORA_packlist(self):
         page = urlopen('http://thoranime.nyaatorrents.org/xdcclist/global/search.php?nick=THORA|Arutha').read()
@@ -122,7 +170,7 @@ class EpisodeTestCase(unittest.TestCase):
             try:
                 self.assertIsNotNone(match)
             except:
-                print 'Failed on', filename
+                logging.error('Failed on {}'.format(filename))
                 raise
 
             # weak test - we should be able to at least get the show and episode number
@@ -147,11 +195,11 @@ class EpisodeTestCase(unittest.TestCase):
             try:
                 self.assertGreater(len(new_eps), 0)
             except TypeError:
-                print 'Failed:', filename
+                logging.error('Failed: {}'.format(filename))
                 raise
 
             eps += new_eps
-            
+
         expected_attrs = [
             ('This Has Spaces', 3, 1, None),
             ('Something wit underscores', 1, 2, None),
@@ -161,13 +209,13 @@ class EpisodeTestCase(unittest.TestCase):
             ('Niña y Tanque', 1, 12, None),
             ('Smoke Erryday', 1, 2, None),
         ]
-        
+
         for ep, expected in zip(eps, expected_attrs):
             self.assertEqual(ep.show, expected[0])
             self.assertEqual(str(ep.season), str(expected[1]))
             self.assertEqual(str(ep.episode), str(expected[2]))
             self.assertEqual(ep.name, expected[3])
-        
+
     def test_actually_a_movie(self):
         movie_filenames = [
             "[Capitalist] Normal Guy Monotone B's - The Movie 2nd [BD 1080p AAC] [DEABBEEF].mkv",
@@ -176,3 +224,5 @@ class EpisodeTestCase(unittest.TestCase):
         for filename in movie_filenames:
             episodes = match_episodes(filename)
             self.assertIsNone(episodes)
+
+_setup_logging()
