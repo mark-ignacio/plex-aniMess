@@ -1,5 +1,5 @@
 # plex-aniMess
-![](https://travis-ci.org/mark-ignacio/plex-aniMess.svg?branch=master)
+[![](https://travis-ci.org/mark-ignacio/plex-aniMess.svg?branch=master)](https://travis-ci.org/mark-ignacio/plex-aniMess)
 
 A Plex Media Server scanner for anime that isn't organized at all.
 
