@@ -22,7 +22,7 @@ except ImportError:
 RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (Group)
                         r'(?P<show>.+?)[ _]'                     # Title of the show follows
                         r'(S(?P<season>\d+)[ _]+)?'              # S01, S2, etc
-                        r'-[ _]'
+                        r'(-[ _])?'
                         r'(?P<ep>\d+x?)'                         # 01
                         r'(-(?P<secondEp>\d+x?))?'               # 01-(02)
                         r'(?P<revision>v\d+)?[ _]*'              # possible end of filename
@@ -187,7 +187,8 @@ class EpisodeTestCase(unittest.TestCase):
             '[umai] Put a quote\' and extra spaces here2 - 11  (Transcode 720p H264).mkv',
             '[One-Raws] Check this lazy title - 40.mkv',
             '[Capitalist] Niña y Tanque - 12v2 [DEABBEEF].mkv',
-            '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv'
+            '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv',
+            '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv'
         ]
         eps = []
         for filename in episode_filenames:
@@ -208,6 +209,7 @@ class EpisodeTestCase(unittest.TestCase):
             ('Check this lazy title', 1, 40, None),
             ('Niña y Tanque', 1, 12, None),
             ('Smoke Erryday', 1, 2, None),
+            ('Super High Quality Show', 1, 9, None)
         ]
 
         for ep, expected in zip(eps, expected_attrs):
