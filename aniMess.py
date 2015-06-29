@@ -66,7 +66,7 @@ def Scan(path, files, media_list, subdirs):
 
 
 # for specially named sequels and the like - this is where we give up and directly match heuristics to overcome the
-# problem of complex regex
+# problem of complex regex. There are also no unit tests for this since I'm planning on replacing this horrible hack
 def amend_exceptions(episodes):
     for ep in episodes:
         if ep.show == 'Code Geass R2':
@@ -76,6 +76,26 @@ def amend_exceptions(episodes):
         elif ep.show == 'Tantei Kageki Milky Holmes TD':
             ep.show = 'Tantei Kageki Milky Holmes'
             ep.season = 4
+
+        elif ep.show == 'Mahou Shoujo Lyrical Nanoha StrikerS':
+            ep.show = 'Magical Girl Lyrical Nanoha'
+            ep.season = 3
+
+        # specials
+        elif ep.show == 'Spice and Wolf' and ep.season == 1:
+            if ep.episode == 13:
+                # if we have episode 13, then we need to kick episodes back
+                for sw in filter(lambda e: e.show == 'Spice and Wolf' and e.season == 1 and e.episode > 6, episodes):
+                    if sw.episode == 7:
+                        sw.season = 0
+                        sw.episode = 1
+                    else:
+                        sw.episode -= 1
+
+        elif ep.show == 'Strike Witches ~Operation Victory Arrow~':
+            ep.show = 'Strike Witches'
+            ep.season = 0
+            ep.episode += 2
 
 
 def match_episodes(file_path):
