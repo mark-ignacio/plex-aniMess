@@ -23,7 +23,7 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'(?P<show>.+?)[ _]'                     # Title of the show follows
                         r'(S(?P<season>\d+)[ _]+)?'              # S01, S2, etc
                         r'(-[ _])?'
-                        r'(?P<ep>\d+x?\b)'                       # 01
+                        r'(?P<ep>\d+)[ _\.xv]'  # 01
                         r'(-(?P<secondEp>\d+x?))?'               # 01-(02)
                         r'(?P<revision>v\d+)?[ _]*'              # possible end of filename
                         r'((?P<title>[^\(\[].+)[ _]+)?'          # title does not start with a parenthesis
@@ -65,12 +65,22 @@ def Scan(path, files, media_list, subdirs):
     Stack.Scan(path, files, media_list, subdirs)
 
 
+# for specially named sequels and the like - this is where we give up and directly match heuristics to overcome the
+# problem of complex regex
+def amend_exceptions(episodes):
+    for ep in episodes:
+        if ep.show == 'Code Geass R2':
+            ep.show = 'Code Geass'
+            ep.season = 2
+
+        elif ep.show == 'Tantei Kageki Milky Holmes TD':
+            ep.show = 'Tantei Kageki Milky Holmes'
+            ep.season = 4
+
+
 def match_episodes(file_path):
     match = None
     filename = os.path.basename(file_path)
-
-    # do some cleaning up...
-    # filename = re.sub('\([Rr]emastered\)', '', filename)
 
     for pattern in [RE_EPISODE_THORA, RE_EPISODE]:
         match = re.match(pattern, filename)
@@ -97,6 +107,8 @@ def match_episodes(file_path):
             episode.display_offset = (ep - episode_num) * 100 / (end_episode - episode_num + 1)
             episode.parts.append(file_path)
             episodes.append(episode)
+
+        amend_exceptions(episodes)
 
         return episodes
 
@@ -188,8 +200,25 @@ class EpisodeTestCase(unittest.TestCase):
             '[One-Raws] Check this lazy title - 40.mkv',
             '[Capitalist] Niña y Tanque - 12v2 [DEABBEEF].mkv',
             '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv',
-            '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv'
+            '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv',
+            # sequels
+            '[Dreamy] Tantei Kageki Milky Holmes TD - 04 (1280x720 x264 AAC).mkv',
+            'Code_Geass_R2_Ep03_Imprisoned_in_Campus_[720p,BluRay,x264]_-_THORA.mkv'
         ]
+
+        expected_attrs = [
+            ('This Has Spaces', 3, 1, None),
+            ('Something wit underscores', 1, 2, None),
+            ('Something wit underscores', 1, 2, 'And a title!'),
+            ('Put a quote\' and extra spaces here2', 1, 11, None),
+            ('Check this lazy title', 1, 40, None),
+            ('Niña y Tanque', 1, 12, None),
+            ('Smoke Erryday', 1, 2, None),
+            ('Super High Quality Show', 1, 9, None),
+            ('Tantei Kageki Milky Holmes', 4, 4, None),
+            ('Code Geass', 2, 3, 'Imprisoned in Campus')
+        ]
+
         eps = []
         for filename in episode_filenames:
             new_eps = match_episodes(filename)
@@ -200,17 +229,6 @@ class EpisodeTestCase(unittest.TestCase):
                 raise
 
             eps += new_eps
-
-        expected_attrs = [
-            ('This Has Spaces', 3, 1, None),
-            ('Something wit underscores', 1, 2, None),
-            ('Something wit underscores', 1, 2, 'And a title!'),
-            ('Put a quote\' and extra spaces here2', 1, 11, None),
-            ('Check this lazy title', 1, 40, None),
-            ('Niña y Tanque', 1, 12, None),
-            ('Smoke Erryday', 1, 2, None),
-            ('Super High Quality Show', 1, 9, None)
-        ]
 
         for ep, expected in zip(eps, expected_attrs):
             self.assertEqual(ep.show, expected[0])
