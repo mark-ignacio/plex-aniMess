@@ -23,7 +23,7 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'(?P<show>.+?)[ _]'                     # Title of the show follows
                         r'(S(?P<season>\d+)[ _]+)?'              # S01, S2, etc
                         r'(-[ _])?'
-                        r'(?P<ep>\d+x?\b)'                         # 01
+                        r'(?P<ep>\d+x?\b)'                       # 01
                         r'(-(?P<secondEp>\d+x?))?'               # 01-(02)
                         r'(?P<revision>v\d+)?[ _]*'              # possible end of filename
                         r'((?P<title>[^\(\[].+)[ _]+)?'          # title does not start with a parenthesis
