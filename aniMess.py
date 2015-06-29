@@ -31,6 +31,12 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'([\[\(](?P<quality2>.+?)[\]\)][ _]*)?'
                         r'([\[\(](?P<checksum>.+)[\]\)])?')
 
+# older format
+RE_AHIRU = re.compile(r'(?P<show>.+?)_(?P<ep>\d+)\.DVD'
+                      r'\((?P<quality>.+?)\)\[(?P<group>.+?)\]'
+                      r'([\[\(](?P<checksum>.+)[\]\)])'
+                      r'(?P<season>=)?(?P<secondEp>=)?(?P<title>=)?')   # stuff that doesn't exist
+
 # they use their own thing
 RE_EPISODE_THORA = re.compile(r'^(?P<show>.+?)_?'
                               r'(S(?P<season>\d+)_)?'
@@ -97,12 +103,17 @@ def amend_exceptions(episodes):
             ep.season = 0
             ep.episode += 2
 
+        elif ep.show == 'Code Geass Akito the Exiled':
+            ep.show = 'Code Geass'
+            ep.season = 0
+            ep.episode += 24
+
 
 def match_episodes(file_path):
     match = None
     filename = os.path.basename(file_path)
 
-    for pattern in [RE_EPISODE_THORA, RE_EPISODE]:
+    for pattern in [RE_EPISODE_THORA, RE_AHIRU, RE_EPISODE]:
         match = re.match(pattern, filename)
         if match:
             break
@@ -221,11 +232,15 @@ class EpisodeTestCase(unittest.TestCase):
             '[Capitalist] Niña y Tanque - 12v2 [DEABBEEF].mkv',
             '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv',
             '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv',
+            'Princess_Tutu_20.DVD(x264.vorbis)[Ahiru][D661E8C8].mkv',
+            # exceptions
+            'Spice_and_Wolf_(2008)_[1080p,BluRay,x264]_-_THORA/Spice_and_Wolf_Ep13_[1080p,BluRay,x264]_-_THORA.mkv',
             # sequels
             '[Dreamy] Tantei Kageki Milky Holmes TD - 04 (1280x720 x264 AAC).mkv',
             '[Coldlight]_Mahou_Shoujo_Lyrical_Nanoha_StrikerS_01v3a_DVD[H264][DEADBEEF].mkv',
             'Code_Geass_R2_Ep03_Imprisoned_in_Campus_[720p,BluRay,x264]_-_THORA.mkv',
-            '[ReinForce] Strike Witches ~Operation Victory Arrow~ 02 (BDRip 1920x1080 x264 FLAC).mkv'
+            '[ReinForce] Strike Witches ~Operation Victory Arrow~ 02 (BDRip 1920x1080 x264 FLAC).mkv',
+            'Code_Geass_Akito_the_Exiled_Ep_2_[1080p,BluRay,flac,x264]_-_THORA.mkv'
         ]
 
         expected_attrs = [
@@ -237,10 +252,13 @@ class EpisodeTestCase(unittest.TestCase):
             ('Niña y Tanque', 1, 12, None),
             ('Smoke Erryday', 1, 2, None),
             ('Super High Quality Show', 1, 9, None),
+            ('Princess Tutu', 1, 20, None),
+            ('Spice and Wolf', 1, 12, None),
             ('Tantei Kageki Milky Holmes', 4, 4, None),
             ('Mahou Shoujo Lyrical Nanoha', 3, 1, None),
             ('Code Geass', 2, 3, 'Imprisoned in Campus'),
-            ('Strike Witches', 0, 4, None)
+            ('Strike Witches', 0, 4, None),
+            ('Code Geass', 0, 26, None)
         ]
 
         eps = []
