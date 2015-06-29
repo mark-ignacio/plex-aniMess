@@ -23,7 +23,7 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'(?P<show>.+?)[ _]'                     # Title of the show follows
                         r'(S(?P<season>\d+)[ _]+)?'              # S01, S2, etc
                         r'(-[ _])?'
-                        r'(?P<ep>\d+)[ _\.xv]'  # 01
+                        r'(?P<ep>\d+)(?=[ _\.xv])'  # 01
                         r'(-(?P<secondEp>\d+x?))?'               # 01-(02)
                         r'(?P<revision>v\d+)?[ _]*'              # possible end of filename
                         r'((?P<title>[^\(\[].+)[ _]+)?'          # title does not start with a parenthesis
@@ -78,7 +78,7 @@ def amend_exceptions(episodes):
             ep.season = 4
 
         elif ep.show == 'Mahou Shoujo Lyrical Nanoha StrikerS':
-            ep.show = 'Magical Girl Lyrical Nanoha'
+            ep.show = 'Mahou Shoujo Lyrical Nanoha'
             ep.season = 3
 
         # specials
@@ -223,7 +223,9 @@ class EpisodeTestCase(unittest.TestCase):
             '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv',
             # sequels
             '[Dreamy] Tantei Kageki Milky Holmes TD - 04 (1280x720 x264 AAC).mkv',
-            'Code_Geass_R2_Ep03_Imprisoned_in_Campus_[720p,BluRay,x264]_-_THORA.mkv'
+            '[Coldlight]_Mahou_Shoujo_Lyrical_Nanoha_StrikerS_01v3a_DVD[H264][DEADBEEF].mkv',
+            'Code_Geass_R2_Ep03_Imprisoned_in_Campus_[720p,BluRay,x264]_-_THORA.mkv',
+            '[ReinForce] Strike Witches ~Operation Victory Arrow~ 02 (BDRip 1920x1080 x264 FLAC).mkv'
         ]
 
         expected_attrs = [
@@ -236,7 +238,9 @@ class EpisodeTestCase(unittest.TestCase):
             ('Smoke Erryday', 1, 2, None),
             ('Super High Quality Show', 1, 9, None),
             ('Tantei Kageki Milky Holmes', 4, 4, None),
-            ('Code Geass', 2, 3, 'Imprisoned in Campus')
+            ('Mahou Shoujo Lyrical Nanoha', 3, 1, None),
+            ('Code Geass', 2, 3, 'Imprisoned in Campus'),
+            ('Strike Witches', 0, 4, None)
         ]
 
         eps = []
