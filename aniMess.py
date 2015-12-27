@@ -23,8 +23,8 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'(?P<show>.+?)[ _]'                     # Title of the show follows
                         r'(S(?P<season>\d+)[ _]+)?'              # S01, S2, etc
                         r'(-[ _])?'
-                        r'(?P<ep>\d+)(?=[ _\.xv])'  # 01
-                        r'(-(?P<secondEp>\d+x?))?'               # 01-(02)
+                        r'E?(?P<ep>\d+)(?=[ _\.xv])'  # 01
+                        r'(-E?(?P<secondEp>\d+x?))?'               # 01-(02)
                         r'(?P<revision>v\d+)?[ _]*'              # possible end of filename
                         r'((?P<title>[^\(\[].+)[ _]+)?'          # title does not start with a parenthesis
                         r'([\[\(](?P<quality>.+?)[\]\)][ _]*)?'
@@ -32,7 +32,8 @@ RE_EPISODE = re.compile(r'^[\[\(](?P<group>.+?)[\]\)][ _]*'      # [Group] or (G
                         r'([\[\(](?P<checksum>.+)[\]\)])?')
 
 # older format
-RE_AHIRU = re.compile(r'(?P<show>.+?)_(?P<ep>\d+)\.DVD'
+RE_AHIRU = re.compile(r'(?P<show>.+?)_(?P<ep>\d+)'
+                      r'(\[v(?P<revision>\d+)\])?\.DVD'
                       r'\((?P<quality>.+?)\)\[(?P<group>.+?)\]'
                       r'([\[\(](?P<checksum>.+)[\]\)])'
                       r'(?P<season>=)?(?P<secondEp>=)?(?P<title>=)?')   # stuff that doesn't exist
@@ -109,9 +110,14 @@ def amend_exceptions(episodes):
             ep.episode += 24
 
 
+def clean_filename(filename):
+    return re.sub(r'Blu\-?Ray Box\s', '', filename, re.IGNORECASE)
+
+
 def match_episodes(file_path):
     match = None
     filename = os.path.basename(file_path)
+    filename = clean_filename(filename)
 
     for pattern in [RE_EPISODE_THORA, RE_AHIRU, RE_EPISODE]:
         match = re.match(pattern, filename)
@@ -131,6 +137,8 @@ def match_episodes(file_path):
 
         end_episode = int(match.group('secondEp')) if match.group('secondEp') else episode_num
         title = match.group('title').replace('_', ' ').strip() if match.group('title') else None
+        if title is not None:
+            title = re.sub(r'^([\'"])(?P<title>.+)(\1)', r'\2', title)
 
         episodes = []
         for ep in range(episode_num, end_episode + 1):
@@ -232,7 +240,9 @@ class EpisodeTestCase(unittest.TestCase):
             '[Capitalist] Niña y Tanque - 12v2 [DEABBEEF].mkv',
             '[Land-Captalist] Smoke Erryday - 02 (720p) [DEABBEEF].mkv',
             '[Coolguise]_Super_High_Quality_Show_09_(1920x1080_Blu-Ray_FLAC)_[DEADBEEF].mkv',
-            'Princess_Tutu_20.DVD(x264.vorbis)[Ahiru][D661E8C8].mkv',
+            'Prince_TwoTwo_01[v2].DVD(x264.vorbis)[Ahiru][DEABBEEF].mkv',
+            'Prince_TwoTwo_20.DVD(x264.vorbis)[Ahiru][DEABBEEF].mkv',
+            "[OZC]Mobile Suit Gundam - The 08th MS Team Blu-Ray Box E09 'Front Line' [720p].mkv",
             # exceptions
             'Spice_and_Wolf_(2008)_[1080p,BluRay,x264]_-_THORA/Spice_and_Wolf_Ep13_[1080p,BluRay,x264]_-_THORA.mkv',
             # sequels
@@ -252,7 +262,9 @@ class EpisodeTestCase(unittest.TestCase):
             ('Niña y Tanque', 1, 12, None),
             ('Smoke Erryday', 1, 2, None),
             ('Super High Quality Show', 1, 9, None),
-            ('Princess Tutu', 1, 20, None),
+            ('Prince TwoTwo', 1, 1, None),
+            ('Prince TwoTwo', 1, 20, None),
+            ('Mobile Suit Gundam - The 08th MS Team', 1, 9, 'Front Line'),
             ('Spice and Wolf', 1, 12, None),
             ('Tantei Kageki Milky Holmes', 4, 4, None),
             ('Mahou Shoujo Lyrical Nanoha', 3, 1, None),
@@ -273,10 +285,10 @@ class EpisodeTestCase(unittest.TestCase):
             eps += new_eps
 
         for ep, expected in zip(eps, expected_attrs):
-            self.assertEqual(ep.show, expected[0])
-            self.assertEqual(str(ep.season), str(expected[1]))
-            self.assertEqual(str(ep.episode), str(expected[2]))
-            self.assertEqual(ep.name, expected[3])
+            self.assertEqual(expected[0], ep.show)
+            self.assertEqual(str(expected[1]), str(ep.season))
+            self.assertEqual(str(expected[2]), str(ep.episode))
+            self.assertEqual(expected[3], ep.name)
 
     def test_actually_a_movie(self):
         movie_filenames = [
