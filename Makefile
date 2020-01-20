@@ -6,4 +6,4 @@ test:
 
 install:
 	rm -f /var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Scanners/Series/aniMess.pyc
-	cp -f aniMess.py /var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Scanners/Series/aniMess.py
+	install -g plex -o plex -D aniMess.py /var/lib/plexmediaserver/Library/Application\ Support/Plex\ Media\ Server/Scanners/Series/aniMess.py
